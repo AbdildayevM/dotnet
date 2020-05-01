@@ -13,11 +13,15 @@ namespace ENDASPNET_PROJECT.Models.Comments
         [Display(Name = "Comment id")]
         public int commentId { get; set; }
 
+        [Required(ErrorMessage = "Please enter field")]
+        [StringLength(500)]
         [Display(Name = "Comment content")]
         public string commentContent { get; set; }
 
+        [Required(ErrorMessage = "Please enter field")]
         [Display(Name = "Comment author ID")]
         public int commentAuthor { get; set; }//one comment one author
+
 
         [Display(Name = "Comment time")]
         public DateTime commentTime { get; set; }

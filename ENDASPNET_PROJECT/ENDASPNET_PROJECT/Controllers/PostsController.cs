@@ -2,12 +2,22 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ENDASPNET_PROJECT.Data;
+using ENDASPNET_PROJECT.Models.Posts;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace ENDASPNET_PROJECT.Controllers
 {
     public class PostsController : Controller
     {
+        private readonly NewsContext _context;
+
+        public IActionResult Index()
+        {
+            return View();
+        }
+
         [HttpGet]
         public IActionResult Add()
         {
@@ -16,14 +26,25 @@ namespace ENDASPNET_PROJECT.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Add(
-        [Bind("id,title,content,author,category")Post post)
+        public ActionResult Create(Post post)
+        {
+            if (ModelState.IsValid)
+            {
+                RedirectToAction("Index");
+            }
+
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Add([Bind("id,title,content,author,category")]Post post)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
-                    _dbcontext.Add(post);
+                    _context.Add(post);
                     await _context.SaveChangesAsync();
                     return RedirectToAction(nameof(Index));
                 }
@@ -40,14 +61,7 @@ namespace ENDASPNET_PROJECT.Controllers
         public async Task<IActionResult> Search(string text)
         {
             text = text.ToLower();
-            var searchedPosts = await _dbContext.Posts.Where(posts => posts.Name.ToLower().Contains(text)
-
-
-                                             posts.id.ToLower().Contains(text)
-
-
-                                             posts.Author.ToLower().Contains(text))
-                                        .ToListAsync();
+            var searchedPosts = await _context.Posts.Where(posts => posts.postTitle.ToLower().Contains(text)).ToListAsync();
             return View("Index", searchedPosts);
         }
 
@@ -63,15 +77,15 @@ namespace ENDASPNET_PROJECT.Controllers
             {
                 return NotFound();
             }
-            var postToUpdate = await _context.Post.FirstOrDefaultAsync(s => s.ID == id);
+            var postToUpdate = await _context.Posts.FirstOrDefaultAsync(s => s.postId == id);
             if (await TryUpdateModelAsync<Post>(
                 postToUpdate,
                 "",
-                s => s.id, s => s.Title, s => s.Content, s => s.Author, s => s.Category))
+                s => s.postId, s => s.postTitle, s => s.postContent, s => s.postAuthor, s => s.postCategory))
             {
                 try
                 {
-                    await _dbcontext.SaveChangesAsync();
+                    await _context.SaveChangesAsync();
                     return RedirectToAction(nameof(Index));
                 }
                 catch (DbUpdateException /* ex */)
@@ -97,9 +111,7 @@ namespace ENDASPNET_PROJECT.Controllers
                 return NotFound();
             }
 
-            var post = await _context.Post
-                .AsNoTracking()
-                .FirstOrDefaultAsync(m => m.ID == id);
+            var post = await _context.Posts.AsNoTracking().FirstOrDefaultAsync(m => m.postId == id);
             if (post == null)
             {
                 return NotFound();

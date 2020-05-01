@@ -2,12 +2,16 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ENDASPNET_PROJECT.Data;
+using ENDASPNET_PROJECT.Models.Comments;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace ENDASPNET_PROJECT.Controllers
 {
     public class CommentsController : Controller
     {
+        private readonly NewsContext _context;
         public IActionResult Index()
         {
             return View();
@@ -20,8 +24,7 @@ namespace ENDASPNET_PROJECT.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Add(
-        [Bind("id,content,authorId,compostId")Comment comment)
+        public async Task<IActionResult> Add([Bind("id,content,authorId,compostId")]Comment comment)
         {
             try
             {
@@ -44,13 +47,7 @@ namespace ENDASPNET_PROJECT.Controllers
         public async Task<IActionResult> Search(string text)
         {
             text = text.ToLower();
-            var searchedComments = await _dbContext.Comments.Where(comments => comments.Name.ToLower().Contains(text)
-
-
-                                             comments.id.ToLower().Contains(text),
-
-
-                                             comments.Author.ToLower().Contains(text))
+            var searchedComments = await _context.Comments.Where(comments => comments.commentContent.ToLower().Contains(text))
                                         .ToListAsync();
             return View("Index", searchedComments);
         }
@@ -67,11 +64,11 @@ namespace ENDASPNET_PROJECT.Controllers
             {
                 return NotFound();
             }
-            var commentToUpdate = await _context.Comment.FirstOrDefaultAsync(s => s.ID == id);
-            if (await TryUpdateModelAsync<Post>(
+            var commentToUpdate = await _context.Comments.FirstOrDefaultAsync(s => s.commentId == id);
+            if (await TryUpdateModelAsync<Comment>(
                 commentToUpdate,
                 "",
-                s => s.id, s => s.content, s => s.AuthorID, s => s.compostId,))
+                s => s.commentId, s => s.commentContent, s => s.commentAuthor, s => s.compostID))
             {
                 try
                 {
@@ -102,9 +99,7 @@ namespace ENDASPNET_PROJECT.Controllers
                 return NotFound();
             }
 
-            var comment = await _context.Comment
-                .AsNoTracking()
-                .FirstOrDefaultAsync(m => m.ID == id);
+            var comment = await _context.Comments.AsNoTracking().FirstOrDefaultAsync(m => m.commentId == id);
             if (comment == null)
             {
                 return NotFound();

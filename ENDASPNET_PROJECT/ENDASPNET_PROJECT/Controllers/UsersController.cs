@@ -2,16 +2,43 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ENDASPNET_PROJECT.Data;
+using ENDASPNET_PROJECT.Models.Posts;
+using ENDASPNET_PROJECT.Models.Users;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace ENDASPNET_PROJECT.Controllers
 {
     public class UsersController : Controller
     {
+        private readonly UsersContext _context;
+
         public IActionResult Index()
         {
             return View();
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Index(User model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+            var json = JsonConvert.SerializeObject(model);
+            return Content(json);
+        }
+        public IActionResult ValidateUserId(int uid)
+        {
+            if (uid == 1)
+                return Json(data: "Tut zanyato!)");
+
+            return Json(data: true);
+        }
+
         [HttpGet]
         public IActionResult Add()
         {
@@ -20,8 +47,7 @@ namespace ENDASPNET_PROJECT.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Add(
-        [Bind("Id,Name,Role")User user)
+        public async Task<IActionResult> Add([Bind("Id,Name,Role")]User user)
         {
             try
             {
@@ -44,13 +70,7 @@ namespace ENDASPNET_PROJECT.Controllers
         public async Task<IActionResult> Search(string text)
         {
             text = text.ToLower();
-            var searchedUsers = await _dbContext.Users.Where(comments => comments.Name.ToLower().Contains(text)
-
-
-                                             users.id.ToLower().Contains(text),
-
-
-                                             users.Author.ToLower().Contains(text))
+            var searchedUsers = await _context.Users.Where(users => users.Name.ToLower().Contains(text))
                                         .ToListAsync();
             return View("Index", searchedUsers);
         }
@@ -67,11 +87,11 @@ namespace ENDASPNET_PROJECT.Controllers
             {
                 return NotFound();
             }
-            var userToUpdate = await _context.Comment.FirstOrDefaultAsync(s => s.ID == id);
-            if (await TryUpdateModelAsync<Post>(
+            var userToUpdate = await _context.Users.FirstOrDefaultAsync(s => s.Id == id);
+            if (await TryUpdateModelAsync<User>(
                 userToUpdate,
                 "",
-                s => s.id, s => s.name, s => s.role))
+                s => s.Id, s => s.Name, s => s.Role))
             {
                 try
                 {
@@ -102,9 +122,7 @@ namespace ENDASPNET_PROJECT.Controllers
                 return NotFound();
             }
 
-            var user = await _context.User
-                .AsNoTracking()
-                .FirstOrDefaultAsync(m => m.ID == id);
+            var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(m => m.Id == id);
             if (user == null)
             {
                 return NotFound();
